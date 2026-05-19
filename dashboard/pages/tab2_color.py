@@ -16,33 +16,39 @@ def load_data():
     fs['order_date'] = pd.to_datetime(fs['order_date'])
     fs['ym'] = fs['order_date'].dt.to_period('M').astype(str)
 
+    months_with_data = sorted(fs['ym'].unique())
+
     top_colors = fs['color_std'].value_counts().head(12).index.tolist()
     hist = fs[fs['color_std'].isin(top_colors)]
     hist_cm = hist.groupby(['ym', 'color_std'])['quantity'].sum().reset_index()
+    hist_cm = hist_cm[hist_cm['ym'].isin(months_with_data)]
     total_by_m = hist.groupby('ym')['quantity'].sum().reset_index(name='total')
     hist_cm = hist_cm.merge(total_by_m, on='ym')
     hist_cm['share'] = hist_cm['quantity'] / hist_cm['total']
 
-    return color_fc, slow, hist_cm, top_colors
+    return color_fc, slow, hist_cm, top_colors, months_with_data
 
 
 def layout():
-    color_fc, slow, hist_cm, top_colors = load_data()
+    color_fc, slow, hist_cm, top_colors, months_with_data = load_data()
 
     fig_hist = px.bar(
         hist_cm, x='ym', y='share', color='color_std',
         barmode='stack', title='Tỷ trọng màu sắc theo tháng (Lịch sử - Top 12)',
-        labels={'ym': 'Tháng', 'share': 'Tỷ trọng', 'color_std': 'Màu'}
+        labels={'ym': 'Tháng', 'share': 'Tỷ trọng', 'color_std': 'Màu'},
+        category_orders={'ym': months_with_data}
     )
-    fig_hist.update_layout(xaxis_tickangle=-45, height=450)
+    fig_hist.update_layout(xaxis_tickangle=-45, height=450, xaxis_type='category')
 
     heatmap_data = hist_cm.pivot(index='color_std', columns='ym', values='quantity').fillna(0)
+    heatmap_data = heatmap_data[months_with_data]
     fig_heatmap = px.imshow(
         heatmap_data, aspect='auto',
         title='Heatmap: Số lượng bán theo Màu x Tháng',
-        labels={'x': 'Tháng', 'y': 'Màu', 'color': 'Số lượng'}
+        labels={'x': 'Tháng', 'y': 'Màu', 'color': 'Số lượng'},
+        x=months_with_data
     )
-    fig_heatmap.update_layout(height=450)
+    fig_heatmap.update_layout(height=450, xaxis_type='category')
 
     fc_top = color_fc.groupby('color_std')['predicted_qty_share'].mean().nlargest(15).reset_index()
     fig_forecast = px.bar(
