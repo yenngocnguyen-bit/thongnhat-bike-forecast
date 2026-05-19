@@ -4,16 +4,22 @@ import plotly.express as px
 from functools import lru_cache
 
 from dashboard.data_cache import get_q3_forecasts
+from dashboard.rfm_utils import apply_rfm_segments, build_rfm_treemap
 
 
 @lru_cache(maxsize=1)
 def layout():
     q3 = get_q3_forecasts()
-    dealers = q3['dealers']
-    churn = q3['churn']
+    dealers = apply_rfm_segments(q3['dealers'])
+    churn = apply_rfm_segments(q3['churn']) if 'R_score' in q3['churn'].columns else q3['churn']
+    if 'rfm_segment' not in churn.columns and 'rfm_segment' in dealers.columns:
+        churn = churn.merge(
+            dealers[['customer_code', 'rfm_segment']],
+            on='customer_code',
+            how='left',
+        )
 
     priority_counts = dealers['marketing_priority'].value_counts()
-    segment_counts = dealers['rfm_segment'].value_counts()
 
     kpi = dbc.Row([
         dbc.Col(dbc.Card(dbc.CardBody([
@@ -62,12 +68,7 @@ def layout():
         labels={'marketing_priority': 'Phân khúc', 'count': 'Số đại lý'}
     )
 
-    fig_rfm = px.bar(
-        segment_counts.reset_index(), x='rfm_segment', y='count',
-        title='Phân khúc RFM',
-        labels={'rfm_segment': 'Segment', 'count': 'Số đại lý'}
-    )
-    fig_rfm.update_layout(xaxis_tickangle=-30)
+    fig_rfm = build_rfm_treemap(dealers)
 
     fig_region = dealers.groupby('region')['marketing_priority'].value_counts().reset_index()
     fig_region_bar = px.bar(
@@ -80,16 +81,17 @@ def layout():
     churn_display = churn[['customer_code', 'recency', 'total_orders', 'total_revenue',
                            'prob_order_30d', 'rfm_segment', 'marketing_priority', 'risk_level']].copy()
     churn_display.columns = ['Mã KH', 'Ngày chưa mua', 'Tổng đơn', 'Tổng DT',
-                             'P(mua)', 'RFM', 'Ưu tiên', 'Mức rủi ro']
+                             'P(mua)', 'Phân khúc RFM', 'Ưu tiên', 'Mức rủi ro']
     churn_display['P(mua)'] = churn_display['P(mua)'].round(3)
     churn_display['Tổng DT'] = churn_display['Tổng DT'].apply(lambda x: f"{x:,.0f}")
 
     dealer_table = dealers.nlargest(50, 'prob_order_30d')[
         ['customer_code', 'prob_order_30d', 'trend_score', 'total_orders',
-         'total_revenue', 'rfm_segment', 'marketing_priority', 'region']
+         'total_revenue', 'R_score', 'F_score', 'M_score', 'rfm_segment',
+         'marketing_priority', 'region']
     ].copy()
     dealer_table.columns = ['Mã KH', 'P(mua)', 'Xu hướng', 'Tổng đơn',
-                            'Tổng DT', 'RFM', 'Ưu tiên', 'Vùng']
+                            'Tổng DT', 'R', 'F', 'M', 'Phân khúc RFM', 'Ưu tiên', 'Vùng']
     dealer_table['P(mua)'] = dealer_table['P(mua)'].round(3)
     dealer_table['Xu hướng'] = dealer_table['Xu hướng'].round(1)
     dealer_table['Tổng DT'] = dealer_table['Tổng DT'].apply(lambda x: f"{x:,.0f}")
@@ -104,8 +106,17 @@ def layout():
             dbc.Col(dcc.Graph(figure=fig_priority, config=graph_cfg), width=4),
         ], className="mb-4"),
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_rfm, config=graph_cfg), width=6),
-            dbc.Col(dcc.Graph(figure=fig_region_bar, config=graph_cfg), width=6),
+            dbc.Col([
+                html.P(
+                    "Kích thước ô = số đại lý. Màu đậm = Recency & Frequency/Monetary cao (Champions). "
+                    "Phân khúc theo điểm R, F, M (thang 1–5).",
+                    className="text-muted small mb-2",
+                ),
+                dcc.Graph(figure=fig_rfm, config=graph_cfg),
+            ], width=12),
+        ], className="mb-4"),
+        dbc.Row([
+            dbc.Col(dcc.Graph(figure=fig_region_bar, config=graph_cfg), width=12),
         ], className="mb-4"),
         html.H5("🚨 Đại lý nguy cơ rời bỏ cao nhất", className="mb-3"),
         dash_table.DataTable(
@@ -125,7 +136,7 @@ def layout():
             data=dealer_table.to_dict('records'),
             columns=[{'name': c, 'id': c} for c in dealer_table.columns],
             style_table={'overflowX': 'auto'},
-            style_cell={'textAlign': 'center', 'padding': '8px', 'fontSize': '13px'},
+            style_cell={'textAlign': 'left', 'padding': '8px', 'fontSize': '13px'},
             style_header={'fontWeight': 'bold', 'backgroundColor': '#ecf0f1'},
             style_data_conditional=[
                 {'if': {'row_index': 'odd'}, 'backgroundColor': '#f8f9fa'}
