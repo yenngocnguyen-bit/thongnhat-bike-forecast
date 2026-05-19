@@ -3,29 +3,20 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
-from pathlib import Path
+from functools import lru_cache
 
-DATA = Path(__file__).parent.parent.parent / 'data' / 'processed'
-FCAST = DATA / 'forecasts'
-
-
-def load_data():
-    monthly = pd.read_parquet(FCAST / 'q1_monthly_forecast.parquet')
-    group_fc = pd.read_parquet(FCAST / 'q1_group_forecast.parquet')
-    top20 = pd.read_parquet(FCAST / 'q1_top20_skus.parquet')
-    rev_fc = pd.read_parquet(FCAST / 'q1_revenue_forecast.parquet')
-    comparison = pd.read_parquet(FCAST / 'q1_model_comparison.parquet')
-
-    fs = pd.read_parquet(DATA / 'fact_sales_clean.parquet')
-    fs['order_date'] = pd.to_datetime(fs['order_date'])
-    hist_weekly = fs.set_index('order_date').resample('W-MON')['line_total'].sum().reset_index()
-    hist_weekly.columns = ['week', 'revenue']
-
-    return monthly, group_fc, top20, rev_fc, comparison, hist_weekly
+from dashboard.data_cache import get_q1_forecasts, get_hist_weekly
 
 
+@lru_cache(maxsize=1)
 def layout():
-    monthly, group_fc, top20, rev_fc, comparison, hist_weekly = load_data()
+    q1 = get_q1_forecasts()
+    monthly = q1['monthly']
+    group_fc = q1['group_fc']
+    top20 = q1['top20']
+    rev_fc = q1['rev_fc'].copy()
+    comparison = q1['comparison']
+    hist_weekly = get_hist_weekly()
 
     total_rev = monthly['revenue'].sum()
     total_qty = monthly['quantity'].sum()
@@ -68,6 +59,7 @@ def layout():
         hovermode='x unified', height=400
     )
 
+    group_fc = group_fc.copy()
     group_fc['month_name'] = group_fc['month'].map({4: 'T4', 5: 'T5', 6: 'T6'})
     fig_group = px.bar(
         group_fc, x='month_name', y='revenue', color='group_code',
@@ -85,10 +77,10 @@ def layout():
         html.H2("📊 Dự báo Doanh số Q2/2026", className="mb-4"),
         kpi_cards,
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_timeline), width=12),
+            dbc.Col(dcc.Graph(figure=fig_timeline, config={'displayModeBar': False}), width=12),
         ], className="mb-4"),
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_group), width=6),
+            dbc.Col(dcc.Graph(figure=fig_group, config={'displayModeBar': False}), width=6),
             dbc.Col([
                 html.H5("So sánh Model", className="mb-3"),
                 dash_table.DataTable(

@@ -1,19 +1,28 @@
 import dash
 from dash import html, dcc, Input, Output
 import dash_bootstrap_components as dbc
-from pathlib import Path
-import json
 
 try:
+    from dashboard.data_cache import warm_cache
     from dashboard.pages.tab1_sales import layout as tab1_layout
     from dashboard.pages.tab2_color import layout as tab2_layout
     from dashboard.pages.tab3_dealer import layout as tab3_layout
     from dashboard.pages.tab4_llm import layout as tab4_layout
 except ImportError:
+    from data_cache import warm_cache
     from pages.tab1_sales import layout as tab1_layout
     from pages.tab2_color import layout as tab2_layout
     from pages.tab3_dealer import layout as tab3_layout
     from pages.tab4_llm import layout as tab4_layout
+
+# Pre-load data and build all pages once at startup
+warm_cache()
+PAGES = {
+    '/': tab1_layout(),
+    '/color': tab2_layout(),
+    '/dealer': tab3_layout(),
+    '/llm': tab4_layout(),
+}
 
 app = dash.Dash(
     __name__,
@@ -46,22 +55,37 @@ app.layout = dbc.Container([
             width=2, className="p-0"
         ),
         dbc.Col(
-            html.Div(id='page-content', className="p-4"),
+            html.Div([
+                html.Div(PAGES['/'], id='page-sales', style={'display': 'block'}),
+                html.Div(PAGES['/color'], id='page-color', style={'display': 'none'}),
+                html.Div(PAGES['/dealer'], id='page-dealer', style={'display': 'none'}),
+                html.Div(PAGES['/llm'], id='page-llm', style={'display': 'none'}),
+            ], className="p-4"),
             width=10, style={"marginLeft": "220px"}
         ),
     ], className="g-0"),
 ], fluid=True)
 
 
-@app.callback(Output('page-content', 'children'), Input('url', 'pathname'))
-def display_page(pathname):
-    if pathname == '/color':
-        return tab2_layout()
-    elif pathname == '/dealer':
-        return tab3_layout()
-    elif pathname == '/llm':
-        return tab4_layout()
-    return tab1_layout()
+@app.callback(
+    [
+        Output('page-sales', 'style'),
+        Output('page-color', 'style'),
+        Output('page-dealer', 'style'),
+        Output('page-llm', 'style'),
+    ],
+    Input('url', 'pathname'),
+)
+def toggle_pages(pathname):
+    active = pathname if pathname in PAGES else '/'
+    hidden = {'display': 'none'}
+    visible = {'display': 'block'}
+    return [
+        visible if active == '/' else hidden,
+        visible if active == '/color' else hidden,
+        visible if active == '/dealer' else hidden,
+        visible if active == '/llm' else hidden,
+    ]
 
 
 if __name__ == '__main__':

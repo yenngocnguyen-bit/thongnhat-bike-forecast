@@ -1,24 +1,8 @@
-from dash import html, dcc
+from dash import html
 import dash_bootstrap_components as dbc
-import json
-from pathlib import Path
+from functools import lru_cache
 
-FCAST = Path(__file__).parent.parent.parent / 'data' / 'processed' / 'forecasts'
-
-
-def load_insights():
-    path = FCAST / 'llm_insights.json'
-    if not path.exists():
-        return {
-            'executive_summary': 'Chưa có dữ liệu. Hãy chạy notebook 04_llm_integration.ipynb với GROQ_API_KEY.',
-            'q1_analysis': 'Chưa có.',
-            'q2_analysis': 'Chưa có.',
-            'q3_analysis': 'Chưa có.',
-            'model': 'N/A',
-            'generated_at': 'N/A'
-        }
-    with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+from dashboard.data_cache import get_llm_insights
 
 
 def format_text(text):
@@ -44,8 +28,9 @@ def format_text(text):
     return elements
 
 
+@lru_cache(maxsize=1)
 def layout():
-    insights = load_insights()
+    insights = get_llm_insights()
 
     return html.Div([
         html.H2("🤖 Phân tích LLM", className="mb-4"),

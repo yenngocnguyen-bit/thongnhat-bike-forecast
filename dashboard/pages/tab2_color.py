@@ -1,36 +1,17 @@
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 import plotly.express as px
-import pandas as pd
-from pathlib import Path
+from functools import lru_cache
 
-DATA = Path(__file__).parent.parent.parent / 'data' / 'processed'
-FCAST = DATA / 'forecasts'
+from dashboard.data_cache import get_q2_forecasts, get_color_hist
 
 
-def load_data():
-    color_fc = pd.read_parquet(FCAST / 'q2_color_forecast.parquet')
-    slow = pd.read_parquet(FCAST / 'q2_slow_moving.parquet')
-
-    fs = pd.read_parquet(DATA / 'fact_sales_clean.parquet')
-    fs['order_date'] = pd.to_datetime(fs['order_date'])
-    fs['ym'] = fs['order_date'].dt.to_period('M').astype(str)
-
-    months_with_data = sorted(fs['ym'].unique())
-
-    top_colors = fs['color_std'].value_counts().head(12).index.tolist()
-    hist = fs[fs['color_std'].isin(top_colors)]
-    hist_cm = hist.groupby(['ym', 'color_std'])['quantity'].sum().reset_index()
-    hist_cm = hist_cm[hist_cm['ym'].isin(months_with_data)]
-    total_by_m = hist.groupby('ym')['quantity'].sum().reset_index(name='total')
-    hist_cm = hist_cm.merge(total_by_m, on='ym')
-    hist_cm['share'] = hist_cm['quantity'] / hist_cm['total']
-
-    return color_fc, slow, hist_cm, top_colors, months_with_data
-
-
+@lru_cache(maxsize=1)
 def layout():
-    color_fc, slow, hist_cm, top_colors, months_with_data = load_data()
+    q2 = get_q2_forecasts()
+    color_fc = q2['color_fc']
+    slow = q2['slow']
+    hist_cm, months_with_data = get_color_hist()
 
     fig_hist = px.bar(
         hist_cm, x='ym', y='share', color='color_std',
@@ -69,6 +50,8 @@ def layout():
 
     status_counts = slow['status'].value_counts()
 
+    graph_cfg = {'displayModeBar': False}
+
     return html.Div([
         html.H2("🎨 Dự báo Màu sắc Q2/2026", className="mb-4"),
         dbc.Row([
@@ -90,11 +73,11 @@ def layout():
             ]), className="shadow-sm"), width=3),
         ], className="mb-4"),
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_hist), width=6),
-            dbc.Col(dcc.Graph(figure=fig_forecast), width=6),
+            dbc.Col(dcc.Graph(figure=fig_hist, config=graph_cfg), width=6),
+            dbc.Col(dcc.Graph(figure=fig_forecast, config=graph_cfg), width=6),
         ], className="mb-4"),
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_heatmap), width=12),
+            dbc.Col(dcc.Graph(figure=fig_heatmap, config=graph_cfg), width=12),
         ], className="mb-4"),
         html.H5("⚠️ SKU có dấu hiệu giảm / bán chậm", className="mb-3"),
         dash_table.DataTable(

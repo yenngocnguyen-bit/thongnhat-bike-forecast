@@ -1,21 +1,16 @@
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 import plotly.express as px
-import pandas as pd
-from pathlib import Path
+from functools import lru_cache
 
-DATA = Path(__file__).parent.parent.parent / 'data' / 'processed'
-FCAST = DATA / 'forecasts'
+from dashboard.data_cache import get_q3_forecasts
 
 
-def load_data():
-    dealers = pd.read_parquet(FCAST / 'q3_dealer_probability.parquet')
-    churn = pd.read_parquet(FCAST / 'q3_churn_risk.parquet')
-    return dealers, churn
-
-
+@lru_cache(maxsize=1)
 def layout():
-    dealers, churn = load_data()
+    q3 = get_q3_forecasts()
+    dealers = q3['dealers']
+    churn = q3['churn']
 
     priority_counts = dealers['marketing_priority'].value_counts()
     segment_counts = dealers['rfm_segment'].value_counts()
@@ -99,16 +94,18 @@ def layout():
     dealer_table['Xu hướng'] = dealer_table['Xu hướng'].round(1)
     dealer_table['Tổng DT'] = dealer_table['Tổng DT'].apply(lambda x: f"{x:,.0f}")
 
+    graph_cfg = {'displayModeBar': False}
+
     return html.Div([
         html.H2("🏪 Dự báo Hoạt động Đại lý", className="mb-4"),
         kpi,
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_scatter), width=8),
-            dbc.Col(dcc.Graph(figure=fig_priority), width=4),
+            dbc.Col(dcc.Graph(figure=fig_scatter, config=graph_cfg), width=8),
+            dbc.Col(dcc.Graph(figure=fig_priority, config=graph_cfg), width=4),
         ], className="mb-4"),
         dbc.Row([
-            dbc.Col(dcc.Graph(figure=fig_rfm), width=6),
-            dbc.Col(dcc.Graph(figure=fig_region_bar), width=6),
+            dbc.Col(dcc.Graph(figure=fig_rfm, config=graph_cfg), width=6),
+            dbc.Col(dcc.Graph(figure=fig_region_bar, config=graph_cfg), width=6),
         ], className="mb-4"),
         html.H5("🚨 Đại lý nguy cơ rời bỏ cao nhất", className="mb-3"),
         dash_table.DataTable(
