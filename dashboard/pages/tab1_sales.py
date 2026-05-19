@@ -30,32 +30,21 @@ def layout():
     total_rev = monthly['revenue'].sum()
     total_qty = monthly['quantity'].sum()
 
+    card_style = {"height": "120px"}
+
+    def kpi_card(title, value, unit, color_class):
+        return dbc.Card(dbc.CardBody([
+            html.H6(title, className="text-muted mb-1"),
+            html.H4(f"{value}", className=color_class + " mb-0"),
+            html.Small(unit)
+        ]), className="shadow-sm h-100", style=card_style)
+
     kpi_cards = dbc.Row([
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Tổng doanh thu Q2", className="text-muted"),
-            html.H3(f"{total_rev:,.0f}", className="text-primary"),
-            html.Small("VNĐ")
-        ]), className="shadow-sm"), width=3),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Tổng số lượng Q2", className="text-muted"),
-            html.H3(f"{total_qty:,.0f}", className="text-success"),
-            html.Small("xe")
-        ]), className="shadow-sm"), width=3),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Tháng 4", className="text-muted"),
-            html.H3(f"{monthly[monthly['month']==4]['revenue'].values[0]:,.0f}", className="text-info"),
-            html.Small("VNĐ")
-        ]), className="shadow-sm"), width=2),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Tháng 5", className="text-muted"),
-            html.H3(f"{monthly[monthly['month']==5]['revenue'].values[0]:,.0f}", className="text-info"),
-            html.Small("VNĐ")
-        ]), className="shadow-sm"), width=2),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Tháng 6", className="text-muted"),
-            html.H3(f"{monthly[monthly['month']==6]['revenue'].values[0]:,.0f}", className="text-info"),
-            html.Small("VNĐ")
-        ]), className="shadow-sm"), width=2),
+        dbc.Col(kpi_card("Tổng doanh thu Q2", f"{total_rev:,.0f}", "VNĐ", "text-primary")),
+        dbc.Col(kpi_card("Tổng số lượng Q2", f"{total_qty:,.0f}", "xe", "text-success")),
+        dbc.Col(kpi_card("Tháng 4", f"{monthly[monthly['month']==4]['revenue'].values[0]:,.0f}", "VNĐ", "text-info")),
+        dbc.Col(kpi_card("Tháng 5", f"{monthly[monthly['month']==5]['revenue'].values[0]:,.0f}", "VNĐ", "text-info")),
+        dbc.Col(kpi_card("Tháng 6", f"{monthly[monthly['month']==6]['revenue'].values[0]:,.0f}", "VNĐ", "text-info")),
     ], className="mb-4")
 
     rev_fc['week'] = pd.to_datetime(rev_fc['week'])
