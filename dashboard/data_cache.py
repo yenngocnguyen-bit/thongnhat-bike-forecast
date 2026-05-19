@@ -17,10 +17,11 @@ def get_fact_sales():
 
 @lru_cache(maxsize=1)
 def get_hist_weekly():
+    from dashboard.time_series_utils import weekly_revenue_observed
     fs = get_fact_sales()
-    out = fs.set_index('order_date').resample('W-MON')['line_total'].sum().reset_index()
-    out.columns = ['week', 'revenue']
-    return out
+    weekly = weekly_revenue_observed(fs)
+    weekly.columns = ['week', 'revenue']
+    return weekly
 
 
 @lru_cache(maxsize=1)

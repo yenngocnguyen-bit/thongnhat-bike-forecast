@@ -42,8 +42,15 @@ def layout():
     fig_timeline = go.Figure()
     fig_timeline.add_trace(go.Scatter(
         x=hist_weekly['week'], y=hist_weekly['revenue'],
-        mode='lines', name='Thực tế', line=dict(color='#2c3e50')
+        mode='lines', name='Thực tế', line=dict(color='#2c3e50'),
+        connectgaps=False,
     ))
+    fig_timeline.add_annotation(
+        x=pd.Timestamp('2025-08-15'), y=hist_weekly['revenue'].max() * 0.85,
+        text='Không có dữ liệu<br>(T4–T12/2025)',
+        showarrow=False, font=dict(size=11, color='#7f8c8d'),
+        bgcolor='rgba(255,255,255,0.8)',
+    )
     fig_timeline.add_trace(go.Scatter(
         x=rev_fc['week'], y=rev_fc['revenue_lgb'],
         mode='lines+markers', name='LightGBM', line=dict(color='#e74c3c', dash='dash')
