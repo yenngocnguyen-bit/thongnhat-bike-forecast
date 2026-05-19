@@ -4,10 +4,16 @@ import dash_bootstrap_components as dbc
 from pathlib import Path
 import json
 
-from pages.tab1_sales import layout as tab1_layout
-from pages.tab2_color import layout as tab2_layout
-from pages.tab3_dealer import layout as tab3_layout
-from pages.tab4_llm import layout as tab4_layout
+try:
+    from dashboard.pages.tab1_sales import layout as tab1_layout
+    from dashboard.pages.tab2_color import layout as tab2_layout
+    from dashboard.pages.tab3_dealer import layout as tab3_layout
+    from dashboard.pages.tab4_llm import layout as tab4_layout
+except ImportError:
+    from pages.tab1_sales import layout as tab1_layout
+    from pages.tab2_color import layout as tab2_layout
+    from pages.tab3_dealer import layout as tab3_layout
+    from pages.tab4_llm import layout as tab4_layout
 
 app = dash.Dash(
     __name__,
