@@ -1,0 +1,52 @@
+[
+  {
+    "qid": "q001",
+    "question": "What is 2 + 2?",
+    "choices": ["3", "4", "5", "6"]
+  },
+  {
+    "qid": "q002",
+    "question": "Đoạn văn sau: 'Hà Nội là thủ đô của Việt Nam, nằm ở phía bắc đất nước. Nó là trung tâm chính trị, kinh tế và văn hóa của đất nước.' Theo đoạn văn, Hà Nội là gì?",
+    "choices": ["Thành phố du lịch", "Thủ đô của Việt Nam", "Thành phố cảng", "Trung tâm công nghiệp"]
+  },
+  {
+    "qid": "q003",
+    "question": "Read the following passage: 'The Great Wall of China is one of the most impressive architectural feats in human history. It stretches over 13,000 miles and was built over many centuries to protect against invasions.' What is the Great Wall of China primarily designed for?",
+    "choices": ["Trade", "Protection against invasions", "Tourism", "Transportation"]
+  },
+  {
+    "qid": "q004",
+    "question": "If a train leaves Station A at 10:00 AM traveling at 60 mph, and another train leaves Station B (100 miles away) at 10:30 AM traveling at 80 mph toward Station A, at what time will they meet?",
+    "choices": ["11:00 AM", "11:15 AM", "11:30 AM", "12:00 PM"]
+  },
+  {
+    "qid": "q005",
+    "question": "Who was the first President of the United States?",
+    "choices": ["Thomas Jefferson", "George Washington", "John Adams", "James Madison"]
+  },
+  {
+    "qid": "q006",
+    "question": "dựa vào đoạn: 'Photosynthesis là quá trình mà các cây xanh sử dụng ánh sáng để tạo ra năng lượng hóa học từ CO2 và nước.' Photosynthesis là gì?",
+    "choices": ["Quá trình hô hấp", "Quá trình tạo năng lượng từ ánh sáng", "Quá trình trao đổi chất", "Quá trình quang hợp"]
+  },
+  {
+    "qid": "q007",
+    "question": "What is the capital of France?",
+    "choices": ["London", "Berlin", "Paris", "Madrid"]
+  },
+  {
+    "qid": "q008",
+    "question": "passage: 'DNA (deoxyribonucleic acid) is the molecule that carries genetic instructions. It consists of four nucleotide bases: adenine, thymine, guanine, and cytosine.' How many nucleotide bases are mentioned in DNA?",
+    "choices": ["2", "3", "4", "5"]
+  },
+  {
+    "qid": "q009",
+    "question": "If 5x + 10 = 35, what is the value of x?",
+    "choices": ["3", "5", "7", "10"]
+  },
+  {
+    "qid": "q010",
+    "question": "What year did the Titanic sink?",
+    "choices": ["1910", "1912", "1915", "1920"]
+  }
+]
