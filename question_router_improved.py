@@ -32,7 +32,7 @@ MAX_TOKENS     = 50                    # only a short label needed
 SLEEP_SEC      = 0.3                   # pause between API calls (rate-limit friendly)
 CATEGORIES     = {"reading_comprehension", "reasoning", "general"}
 
-# Passage-start markers — Vietnamese & English heuristic pre-filter
+# Passage-start markers - Vietnamese & English heuristic pre-filter
 PASSAGE_MARKERS = [
     "đoạn thông tin",
     "đoạn văn",
@@ -45,7 +45,7 @@ PASSAGE_MARKERS = [
 
 SYSTEM_PROMPT = """\
 You are a question-type classifier. Given a multiple-choice question (and its answer choices), \
-output EXACTLY one of these three labels — nothing else:
+output EXACTLY one of these three labels - nothing else:
 
   reading_comprehension
   reasoning
@@ -177,14 +177,14 @@ def main():
     if args.limit:
         dataset = dataset[: args.limit]
 
-    # ── Classify ─────────────────────────────────────────────────────────────
+    # ── Classify ──────────────────────────────────────────────────────────────
     results     = []
     api_calls   = 0
     heuristic_n = 0
     errors      = 0
     skipped     = 0
 
-    print(f"Processing {len(dataset)} questions  (model={MODEL})…\n")
+    print(f"Processing {len(dataset)} questions  (model={MODEL})...\n")
 
     for i, item in enumerate(dataset, 1):
         # Validate item structure
@@ -234,16 +234,16 @@ def main():
         results.append({"qid": qid, "label": label, "source": source})
 
         if i % 50 == 0 or i == len(dataset):
-            print(f"  [{i:>4}/{len(dataset)}]  {qid}  →  {label}  ({source})")
+            print(f"  [{i:>4}/{len(dataset)}]  {qid}  ->  {label}  ({source})")
 
-    # ── Save ─────────────────────────────────────────────────────────────────
+    # ── Save ──────────────────────────────────────────────────────────────────
     output_path = Path(args.output)
     
     # Create backup if output file already exists
     if output_path.exists():
-        backup_path = output_path.with_suffix(f".backup.json")
+        backup_path = output_path.with_suffix(".backup.json")
         output_path.rename(backup_path)
-        print(f"✓ Previous results backed up to {backup_path}")
+        print(f"Previous results backed up to {backup_path}")
 
     try:
         with open(args.output, "w", encoding="utf-8") as f:
@@ -251,10 +251,10 @@ def main():
     except Exception as e:
         sys.exit(f"ERROR: Failed to write results to '{args.output}': {e}")
 
-    # ── Summary ──────────────────────────────────────────────────────────────
+    # ── Summary ────────────────────────────────────────────────────────────────
     counts = Counter(r["label"] for r in results)
     
-    print(f"\n{'─'*60}")
+    print(f"\n{'-'*60}")
     print(f"  Total processed     : {len(results)}")
     print(f"  Skipped (invalid)   : {skipped}")
     print(f"  API calls made      : {api_calls}")
@@ -265,12 +265,12 @@ def main():
     if counts:
         max_count = max(counts.values())
         for lbl, cnt in sorted(counts.items()):
-            bar = "█" * (cnt * 30 // max_count) if max_count > 0 else ""
+            bar = "*" * (cnt * 30 // max_count) if max_count > 0 else ""
             pct = 100 * cnt / len(results) if len(results) > 0 else 0
             print(f"    {lbl:<30} {cnt:>4}  ({pct:>5.1f}%)  {bar}")
     
-    print(f"\n  ✓ Output → {args.output}")
-    print(f"{'─'*60}")
+    print(f"\n  Output -> {args.output}")
+    print(f"{'-'*60}")
 
 
 if __name__ == "__main__":
